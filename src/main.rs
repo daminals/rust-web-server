@@ -4,13 +4,16 @@ use std::net::TcpStream;
 use std::fs;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let ip = "127.0.0.1:7878";
+    let listener = TcpListener::bind(ip).unwrap();
+    let linebreak = "-".repeat(50);
+    println!("\n\n{}", linebreak);
+    println!("Rust web server running on: {}", ip);
 
     for stream in listener.incoming(){
         let stream = stream.unwrap();
         println!("Connection established 😎✌️");
         handle_connection(stream)
-
     }
 }
 
@@ -21,23 +24,21 @@ fn handle_connection(mut stream: TcpStream){
     let get = b"GET / HTTP/1.1\r\n";
     
     if buffer.starts_with(get) {
-        let html_contents = fs::read_to_string("return.html").unwrap();
-        let response = format!(
-            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-            html_contents.len(),
-            html_contents
-        );
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();    
+        rq_response(&stream, "return.html", "HTTP/1.1 200 OK");
     }
     else {
-        let html_contents = fs::read_to_string("404.html").unwrap();
+        rq_response(&stream, "404.html", "HTTP/1.1 404 NOT FOUND");
+    }
+}
+
+fn rq_response(mut stream: &TcpStream, html_file: &str, html_response: &str){
+        let html_contents = fs::read_to_string(html_file).unwrap();
         let response = format!(
-            "HTTP/1.1 404 NOT FOUND\r\nContent-Length: {}\r\n\r\n{}",
+            "{}\r\nContent-Length: {}\r\n\r\n{}", html_response,
             html_contents.len(),
             html_contents
         );
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();    
-    }
+
 }
